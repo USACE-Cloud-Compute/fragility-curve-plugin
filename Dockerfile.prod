@@ -39,4 +39,4 @@ RUN apt update &&\
     apt -y install gdal-bin gdal-data libgdal-dev
 
 COPY --from=builder /usr/local/lib/tiledb /usr/local/lib/tiledb
-COPY --from=builder /src/fragility-curves .
+COPY --from=builder /src/fragility-curves /app/fragility-curves
