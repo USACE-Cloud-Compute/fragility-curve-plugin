@@ -1,10 +1,10 @@
-package utils
+package compute
 
 import (
 	"fmt"
 	"slices"
 
-	"github.com/usace/cc-go-sdk"
+	"github.com/usace-cloud-compute/cc-go-sdk"
 )
 
 // EventConfiguration is a simple structure to support consistency in cc plugins regarding the usage of seeds for natural variability and knowledge uncertainty and realization numbers for indexing

@@ -1,4 +1,4 @@
-package fragilitycurve
+package compute
 
 import (
 	"errors"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-statistics/paireddata"
 	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
-	"github.com/usace/fragility-curves/utils"
 )
 
 type Model struct {
@@ -143,7 +142,7 @@ func (fcm Model) Compute(variabilitySeed int64, uncertaintySeed int64) (ModelRes
 	}
 	return results, nil
 }
-func (fcm Model) ComputeAll(seeds []utils.SeedSet) ([]ModelResult, error) {
+func (fcm Model) ComputeAll(seeds []SeedSet) ([]ModelResult, error) {
 	results := make([]ModelResult, 0)
 	for _, seed := range seeds {
 		result, err := fcm.Compute(seed.BlockSeed, seed.RealizationSeed)

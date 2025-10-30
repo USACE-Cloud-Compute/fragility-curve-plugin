@@ -1,9 +1,9 @@
-package fragilitycurve
+package compute
 
 import (
 	"errors"
 
-	"github.com/usace/cc-go-sdk"
+	"github.com/usace-cloud-compute/cc-go-sdk"
 )
 
 func WriteFailureElevationsToTiledb(iomanager cc.IOManager, storeName string, path string, results []ModelResult) error {

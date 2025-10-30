@@ -1,4 +1,4 @@
-package fragilitycurve
+package compute
 
 import (
 	"encoding/json"
