@@ -99,7 +99,7 @@ func (asa *AllSamplesAction) Run() error {
 			}
 			strdatab.WriteString("\n")
 
-			a.Outputs[0].Paths["event"] = strings.ReplaceAll(pathPattern, "$<eventnumber>", istring)
+			a.Outputs[0].Paths["event"] = strings.ReplaceAll(pathPattern, "${VAR::eventnumber}", istring)
 			data, err := json.Marshal(r)
 			if err != nil {
 				return err
