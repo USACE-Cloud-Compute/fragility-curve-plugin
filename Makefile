@@ -1,7 +1,7 @@
 # Makefile for Go application
 
 # Variables
-BINARY_NAME = fragility-curve
+BINARY_NAME = fragility-curves
 COMMIT = $(shell git describe --tags --always --long)
 DATE = $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
