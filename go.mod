@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20240126145250-a17483ae0981
-	github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251107212354-5a119df130a4
+	github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110180756-cac3686e146b
 )
 
 require (

@@ -15,3 +15,5 @@ main
 # vendor/
 configs/
 .vscode
+.env
+fragility-curves

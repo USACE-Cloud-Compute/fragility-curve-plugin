@@ -29,17 +29,20 @@ func (asa *AllSamplesAction) Run() error {
 	writeSamplesToTiledb := a.Attributes.GetBooleanOrDefault("elevations_format", false)
 	if len(a.Outputs) != 1 {
 		err := errors.New("more than one output was defined")
+		asa.Log("fatal error", "error", err)
 		return err
 	}
 
 	var fcm compute.Model
 	modelReader, err := a.GetReader(cc.DataSourceOpInput{DataSourceName: "fragilitycurve", PathKey: "default"})
 	if err != nil {
+		asa.Log("failed to get data source reader", "datasource", "fragilitycurve", "pathkey", "default", "error", err)
 		return err
 	}
 	defer modelReader.Close()
 	err = json.NewDecoder(modelReader).Decode(&fcm)
 	if err != nil {
+		asa.Log("failed to decode json fragility curves", "error", err)
 		return err
 	}
 	//seeds
@@ -47,18 +50,21 @@ func (asa *AllSamplesAction) Run() error {
 	if readSeedsFromTiledb {
 		seeds, err = compute.ReadSeedsFromTiledb(a.IOManager, "store", "seeds", "fragilitycurveplugin") //improve this to not be hard coded.
 		if err != nil {
+			asa.Log("failed to read seeds from tile db", "error", err)
 			return err
 		}
 	} else {
 		//json
 		eventConfigurationReader, err := a.GetReader(cc.DataSourceOpInput{DataSourceName: "seeds", PathKey: "default"})
 		if err != nil {
+			asa.Log("failed to read seeds from json", "error", err)
 			return err
 		}
 		var ecs []compute.EventConfiguration
 		defer eventConfigurationReader.Close()
 		err = json.NewDecoder(eventConfigurationReader).Decode(&ecs)
 		if err != nil {
+			asa.Log("failed to decode seeds json", "error", err)
 			return err
 		}
 		for _, ec := range ecs {
@@ -68,16 +74,19 @@ func (asa *AllSamplesAction) Run() error {
 
 	modelResult, err := fcm.ComputeAll(seeds)
 	if err != nil {
+		asa.Log("failed to perform computeAll", "error", err)
 		return err
 	}
 	if writeSamplesToTiledb {
 		err = compute.WriteFailureElevationsToTiledb(a.IOManager, "store", "failure_elevations", modelResult)
 		if err != nil {
+			asa.Log("failed to write failure elevations to tiledb", "error", err)
 			return err
 		}
 	} else {
 		strdatab := strings.Builder{}
 		pathPattern := a.Outputs[0].Paths["event"]
+		fmt.Println(pathPattern)
 		tenpercent := len(modelResult) / 10
 		percent_complete := 0
 		for i, r := range modelResult {
@@ -99,17 +108,26 @@ func (asa *AllSamplesAction) Run() error {
 			}
 			strdatab.WriteString("\n")
 
-			a.Outputs[0].Paths["event"] = strings.ReplaceAll(pathPattern, "${VAR::eventnumber}", istring)
+			//a.Outputs[0].Paths["event"] = strings.ReplaceAll(pathPattern, "${VAR::eventnumber}", istring)
 			data, err := json.Marshal(r)
 			if err != nil {
+				asa.Log("failed to marshall event json", "error", err)
 				return err
 			}
+
 			input := cc.PutOpInput{
-				SrcReader:         bytes.NewReader(data),
-				DataSourceOpInput: cc.DataSourceOpInput{DataSourceName: a.Outputs[0].Name, PathKey: "event"},
+				SrcReader: bytes.NewReader(data),
+				DataSourceOpInput: cc.DataSourceOpInput{
+					DataSourceName: a.Outputs[0].Name,
+					PathKey:        "event",
+					TemplateVars: map[string]string{
+						"eventnumber": istring,
+					},
+				},
 			}
 			_, err = a.Put(input)
 			if err != nil {
+				asa.Log("failed to copy output", "datasource", a.Outputs[0].Name, "pathkey", "event", "error", err)
 				return err
 			}
 		}
@@ -120,6 +138,7 @@ func (asa *AllSamplesAction) Run() error {
 		}
 		_, err = a.Put(input)
 		if err != nil {
+			asa.Log("failed to copy output", "datasource", a.Outputs[0].Name, "pathkey", "default", "error", err)
 			return err
 		}
 	}

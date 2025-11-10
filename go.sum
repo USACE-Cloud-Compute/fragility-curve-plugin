@@ -99,6 +99,14 @@ github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251028200929-467ec9a1f90f h1:1
 github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251028200929-467ec9a1f90f/go.mod h1:xoR5I8rOZZvUT8rpT/5E2EzFCVztcUzfeEaPofX7rRA=
 github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251107212354-5a119df130a4 h1:pQ155jJsk3ZQPegzQx8ZfSwWVFPg/+PdilqRcOZumxQ=
 github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251107212354-5a119df130a4/go.mod h1:HZsGTrNUUdjfqqJJaLpSBEKoIDmu/vnye2KK/AwchDo=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110144254-bb27316f9373 h1:vLCZWWSDJ5vUHxCJ9CIE0fr8ini/YvmINnaNtvKFR5k=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110144254-bb27316f9373/go.mod h1:HZsGTrNUUdjfqqJJaLpSBEKoIDmu/vnye2KK/AwchDo=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110170738-0538e9bd4a30 h1:Q5qppaTVdh06WNCde15ZsnBvWe6aqBSnUHOr2AW7TQ0=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110170738-0538e9bd4a30/go.mod h1:HZsGTrNUUdjfqqJJaLpSBEKoIDmu/vnye2KK/AwchDo=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110180135-1d66bc513cbf h1:AxqmAVD/AO+cHTksGsCHEQSkjO94P5vcwq37BlDvZgE=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110180135-1d66bc513cbf/go.mod h1:HZsGTrNUUdjfqqJJaLpSBEKoIDmu/vnye2KK/AwchDo=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110180756-cac3686e146b h1:OuTZCioljCEQ9e2tBKaXi1VQ/6CQs4NFQi+Ft6+EgvU=
+github.com/usace-cloud-compute/cc-go-sdk v0.0.0-20251110180756-cac3686e146b/go.mod h1:HZsGTrNUUdjfqqJJaLpSBEKoIDmu/vnye2KK/AwchDo=
 github.com/usace-cloud-compute/filesapi v0.0.0-20251028183744-20a294ce41f9 h1:Xq+vXV+1T0MQb32c6CsYwn56XDbWSIO3CM6IYv6Im9A=
 github.com/usace-cloud-compute/filesapi v0.0.0-20251028183744-20a294ce41f9/go.mod h1:6iMo7JYrqbf0dfSVGqrAJfoVhi2hKJysD5o8mXi0XhI=
 github.com/usace-cloud-compute/filesapi v0.0.0-20251107191432-8084e0da4b5c h1:1Srw2WpT9tcEIUY853oeojXJjPH8iTYFGLXPaIrUe+I=
