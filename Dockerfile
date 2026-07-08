@@ -35,7 +35,7 @@ ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 ENV LIBRARY_PATH="${TILEDB_LIB}/lib"
 
 RUN apt update &&\
-    apt -y install libssl-dev libbz2-dev libgdbm-dev uuid-dev libncurses-dev libffi-dev libgdbm-compat-dev sqlite3 lzma lzma-dev
+    apt -y install libssl-dev libbz2-dev libgdbm-dev uuid-dev libncurses-dev libffi-dev libgdbm-compat-dev sqlite3 lzma lzma-dev ca-certificates
 
 COPY --from=builder /usr/local/lib/tiledb /usr/local/lib/tiledb
 COPY --from=builder /src/fragility-curves /app/fragility-curves
