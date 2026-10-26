@@ -1,79 +1,75 @@
-# All Samples Action Plugin
+# All Samples Action
 
 ## Description
-The all-samples action plugin computes fragility curves using specified seeds for natural variability and knowledge uncertainty. It takes a fragility curve model definition and event configuration with associated seeds, then generates a failure elevation sample for each probability point in the fragility curve.
+The `all-samples` action computes the failure elevation at every location in a fragility curve model for **every event** in one invocation. It reads one seed set per event, samples each curve once per event, and writes the results either as files (CSV and per-event JSON) or as a TileDB array.
 
-## Implementation Details
-The action implements the `cc.ActionRunner` interface and registers itself under the name "all-samples". It reads a fragility curve model from the "fragilitycurve" input data source and event configuration with seeds from the "seeds" input data source. The plugin uses the provided block seed and realization seed to compute a set of samples of the fragility curve, generating failure elevations for each probability point.
+Use it to process a whole simulation at once. For one event per invocation, use [single-sample](single-sample.md).
 
 ## Process Flow
-- Read fragility curve model from "fragilitycurve" input data source
-- Read event-configuration with seeds from "seeds" input data source
-- Extract seed set named "fragilitycurveplugin" from event configuration
-- Compute fragility curves using the extracted seeds
-- Marshal result to JSON format
-- Write computed result to output data source
+1. Read the fragility curve model from the `fragilitycurve` input data source.
+2. Read seeds, one set per event, in order:
+   - `seeds_format: false`: from the `seeds` input data source (JSON array)
+   - `seeds_format: true`: from the TileDB array `seeds` in the store named `store`
+3. For each event, sample each location's curve using `realization_seed` (knowledge uncertainty), then a failure elevation using `block_seed` (natural variability).
+4. Write results:
+   - `elevations_format: false`: a CSV of all events to the output's `default` path, and one JSON file per event to its `event` path
+   - `elevations_format: true`: the TileDB array `failure_elevations` in the store named `store`
 
 ## Configuration
 
-### Environment
-- Requires access to input data sources "fragilitycurve" and "seeds"
-- Must have proper permissions to read from input data sources and write to output data source
-
 ### Attributes
+| Attribute | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `seeds_format` | bool | No | `false` | `true`: read seeds from the TileDB event store instead of the `seeds` JSON input |
+| `elevations_format` | bool | No | `false` | `true`: write failure elevations to the TileDB event store instead of CSV/JSON files |
 
-### Action
-| Attribute | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `seeds_format` | bool | No | When true seeds are read from an event store |
-| `elevations_format` | bool | No | When true elevations are read from an event store |
+### Inputs
+| Data source name | Path key | Required when | Format |
+|---|---|---|---|
+| `fragilitycurve` | `default` | Always | Fragility curve model JSON (see the [README](../../README.md#input-the-fragility-curve-model)) |
+| `seeds` | `default` | `seeds_format` is `false` | JSON **array** of event configurations, one per event, in event order |
 
-### Global
-No global attribute configuration required
+Seeds file (JSON mode):
+```json
+[
+  { "seeds": { "fragilitycurveplugin": { "event_seed": 11, "block_seed": 12, "realization_seed": 13 } } },
+  { "seeds": { "fragilitycurveplugin": { "event_seed": 21, "block_seed": 22, "realization_seed": 23 } } }
+]
+```
 
-### Input Configuration
- - **fragilitycurve** data source
- - **seeds** data source
+### Outputs
+Exactly one output data source must be defined, even in TileDB mode, where it isn't written to. In file mode it needs two path keys:
 
-### Input Data Sources
-- **fragilitycurve**: JSON formatted fragility curve model containing probability-stage relationships with distribution parameters.  The data source requires a **Path** with a key of **default**
-- **seeds**: JSON formatted event configuration containing seed sets for natural variability and knowledge uncertainty. The data source requires a **Path** with a key of **default**
+| Path key | Contents |
+|---|---|
+| `default` | CSV of all events |
+| `event` | Per-event JSON. Must contain `${VAR::eventnumber}` so each event gets its own file; otherwise every event overwrites the same file |
 
-### Output Configuration
- - output should be configured as a single data source with a **Path** key of **default**
-
-### STORES
- - at least one of two stores is required:
-   - if an event store is being used, then a DataStore named 'store' and configured for tiledb, is required:
-   ```json
-    {
-      "name": "store",
-      "store_type": "TILEDB",
-      "profile": "FFRD",
-      "params": {
-        "root": "model-library/ffrd-trinity/conformance/simulations"
-      }
+### Stores
+- **File mode:** any store type that the input and output data sources reference.
+- **TileDB mode** (either attribute `true`): a store named exactly `store` with type `TILEDB`:
+  ```json
+  {
+    "name": "store",
+    "store_type": "TILEDB",
+    "profile": "FFRD",
+    "params": {
+      "root": "model-library/ffrd-trinity/conformance/simulations"
     }
-    ```
-   - if a file store is required, then a DataStore named 'seeds' is required:
-   ```json
-    {
-      "name": "FFRD",
-      "store_type": "S3",
-      "profile": "FFRD",
-      "params": {
-        "root": "model-library/ffrd-trinity"
-      }
-    }
-   ``` 
+  }
+  ```
+  - Reading seeds expects a dense array `seeds` (rows = events, columns = plugins) with int64 attributes `realization_seed`, `block_seed` and `event_seed`, and a `seed_columns` metadata entry listing the column names. One of those names must be `fragilitycurveplugin`.
+  - Writing creates a dense array `failure_elevations` with dimensions `Events` (1…number of events) × `fragility_locations` (1…number of locations), a float64 attribute `failure_elevation`, and a `fragility_locations` metadata entry listing location names in column order.
 
-## Configuration Examples
+  The names `store`, `seeds` and `failure_elevations` are hard-coded.
+
+## Configuration Example (file mode)
 
 ```json
 {
   "name": "all-samples",
   "type": "all-samples",
-  "description": "create failure_elevations",
+  "description": "create failure elevations",
   "attributes": {
     "seeds_format": false,
     "elevations_format": false
@@ -81,7 +77,6 @@ No global attribute configuration required
   "inputs": [
     {
       "name": "fragilitycurve",
-      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
       "paths": {
         "default": "{ATTR::scenario}/system-response/conformance_system_response_curves.json"
       },
@@ -89,7 +84,6 @@ No global attribute configuration required
     },
     {
       "name": "seeds",
-      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
       "paths": {
         "default": "{ATTR::scenario}/{ATTR::outputroot}/seeds.json"
       },
@@ -99,7 +93,6 @@ No global attribute configuration required
   "outputs": [
     {
       "name": "failure_elevations",
-      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
       "paths": {
         "default": "{ATTR::scenario}/{ATTR::outputroot}/system-response/failure_elevations.csv",
         "event": "{ATTR::scenario}/{ATTR::outputroot}/event-data/${VAR::eventnumber}/system-response/failure_elevations.json"
@@ -108,31 +101,27 @@ No global attribute configuration required
     }
   ]
 }
-
 ```
 
-## Outputs
+## Outputs (file mode)
 
-### Format
-JSON formatted output containing computed fragility curve location result (i.e. failure elevation)
+CSV (`default` path). There is one row per event and one column per location, in model order:
+```
+event_number,levee1,levee2
+1,104.3,98.7
+2,101.9,99.2
+```
+`event_number` is the 1-based position of the event in the seeds list, not the seed's `event_seed`.
 
-### Data structures
+Per-event JSON (`event` path, with `eventnumber` set to the same 1-based number):
 ```json
 {
   "results": [
-    {
-      "location": "levee1",
-      "failure_elevation": 1.00
-    }
+    { "location": "levee1", "failure_elevation": 104.3 },
+    { "location": "levee2", "failure_elevation": 98.7 }
   ]
 }
 ```
 
-### Fields
-- **location**: Name of the infrastructure location
-- **failure_elevation**: the value of the failure elevation
-
-
-
 ## Error Handling
-Errors are logged to the compute environment and processing will stop on error
+The action logs the failure and stops on any error: the payload doesn't define exactly one output, an input or store can't be read, or an output can't be written. Progress is logged roughly every 10% of events.

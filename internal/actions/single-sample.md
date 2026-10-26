@@ -1,54 +1,55 @@
-# Single Sample Action Plugin
+# Single Sample Action
 
 ## Description
-The single-sample action plugin computes a single fragility curve sample using specified seeds for natural variability and knowledge uncertainty. It takes a fragility curve model definition and event configuration with associated seeds, then generates a failure elevation sample for each probability point in the fragility curve.
+The `single-sample` action computes the failure elevation at every location in a fragility curve model for **one event**. It reads the model and that event's seeds, samples each curve once, and writes one JSON result.
 
-## Implementation Details
-The action implements the `cc.ActionRunner` interface and registers itself under the name "single-sample". It reads a fragility curve model from the "fragilitycurve" input data source and event configuration with seeds from the "seeds" input data source. The plugin uses the provided block seed and realization seed to compute a single sample of the fragility curve, generating failure elevations for each probability point.
+Use it when each event runs as its own plugin invocation. To compute many events in one invocation, use [all-samples](all-samples.md).
 
 ## Process Flow
-2. Read fragility curve model from "fragilitycurve" input data source
-3. Read event-configuration with seeds from "seeds" input data source
-4. Extract seed set named "fragilitycurveplugin" from event configuration
-5. Compute single fragility curve sample using the extracted seeds
-6. Marshal result to JSON format
-7. Write computed result to output data source
+1. Read the fragility curve model from the `fragilitycurve` input data source.
+2. Read the event configuration from the `seeds` input data source.
+3. Take the seed set named `fragilitycurveplugin`. If it is missing, the action fails.
+4. For each location, sample the curve using `realization_seed` (knowledge uncertainty), then sample a failure elevation using `block_seed` (natural variability).
+5. Write the result as JSON to the single output data source's `default` path.
 
 ## Configuration
 
-### Environment
-- Requires access to input data sources "fragilitycurve" and "seeds"
-- Must have proper permissions to read from input data sources and write to output data source
-
 ### Attributes
+None.
 
-### Action
-No action attribute configuration required
+### Inputs
+| Data source name | Path key | Format |
+|---|---|---|
+| `fragilitycurve` | `default` | Fragility curve model JSON (see the [README](../../README.md#input-the-fragility-curve-model)) |
+| `seeds` | `default` | A single event configuration object (below) |
 
-### Global
-No global attribute configuration required
+Seeds file:
+```json
+{
+  "seeds": {
+    "fragilitycurveplugin": {
+      "event_seed": 1234,
+      "block_seed": 5678,
+      "realization_seed": 9012
+    }
+  }
+}
+```
+Other seed sets in the file are ignored.
 
-### Input Configuration
- - **fragilitycurve** data source
- - **seeds** data source
+### Outputs
+Exactly one output data source is required, with a `default` path key. Its name is up to you.
 
-### Input Data Sources
-- **fragilitycurve**: JSON formatted fragility curve model containing probability-stage relationships with distribution parameters.  The data source requires a **Path** with a key of **default**
-- **seeds**: JSON formatted event configuration containing seed sets for natural variability and knowledge uncertainty. The data source requires a **Path** with a key of **default**
+### Stores
+Any store type supported by cc-go-sdk that the input and output data sources reference.
 
-### Output Configuration
- - output should be configured as a single data source with a **Path** key of **default**
-
-### STORES
-- No explicit store configuration required
-
-## Configuration Examples
+## Configuration Example
 
 ```json
 {
   "name": "single-sample",
   "type": "single-sample",
-  "description": "create failure_elevations",
+  "description": "create failure elevations",
   "inputs": [
     {
       "name": "fragilitycurve",
@@ -69,35 +70,28 @@ No global attribute configuration required
     {
       "name": "failure_elevations",
       "paths": {
-        "default": "{ATTR::scenario}/{ATTR::outputroot}/system-response/failure_elevation.csv",
+        "default": "{ATTR::scenario}/{ATTR::outputroot}/system-response/failure_elevations.json"
       },
       "store_name": "FFRD"
     }
   ]
 }
-
 ```
 
-## Outputs
+## Output
 
-### Format
-JSON formatted output containing computed fragility curve location result (i.e. failure elevation)
-
-### Data structures
 ```json
 {
   "results": [
-    {
-      "location": "levee1",
-      "failure_elevation": 1.00
-    }
+    { "location": "levee1", "failure_elevation": 104.3 }
   ]
 }
 ```
 
-### Fields
-- **location**: Name of the infrastructure location
-- **failure_elevation**: the value of the failure elevation
+- **location**: the location name from the model
+- **failure_elevation**: the sampled stage at which the location fails for this event, in the model's elevation units
+
+Results are listed in the same order as the locations in the model.
 
 ## Error Handling
-Errors are logged to the compute environment and processing will stop on error
+The action returns an error and stops if: the payload doesn't define exactly one output, an input can't be read or parsed, the `fragilitycurveplugin` seed set is missing, or the output can't be written. This action returns errors without logging them first. `main.go` logs the error and the process exits 0.
